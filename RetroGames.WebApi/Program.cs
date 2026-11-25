@@ -2,6 +2,7 @@ using RetroGames.WebApi.Configuration;
 using RetroGames.WebApi.Middlewares;
 using FluentValidation;
 using RetroGames.WebApi.Filters;
+using RetroGames.Services;
 
 DotNetEnv.Env.TraversePath().Load();
 
@@ -32,12 +33,21 @@ builder.Services
                             ? erro.ErrorMessage
                             : "Valor inválido."))));
     });
-    
 builder.Services.AddOpenApi();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+
+await using (var escopo = app.Services.CreateAsyncScope())
+{
+    var autenticacao = escopo.ServiceProvider
+        .GetRequiredService<IAutenticacaoService>();
+
+    await autenticacao.GarantirAdministradorInicialAsync(
+        app.Configuration["AdminInicial:Email"],
+        app.Configuration["AdminInicial:Senha"]);
+}
 
 app.UseExceptionHandler();
 
