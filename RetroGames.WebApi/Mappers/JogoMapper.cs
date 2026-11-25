@@ -1,5 +1,6 @@
 using RetroGames.Services;
 using RetroGames.WebApi.ApiModels;
+using RetroGames.Model.Model;
 
 namespace RetroGames.WebApi.Mappers;
 
@@ -47,5 +48,28 @@ public static class JogoMapper
             jogo.IdCondicaoJogo,
             detalhe.DescricaoCondicaoJogo,
             detalhe.Generos.Select(genero => genero.ParaResponse()).ToArray());
+    }
+
+    public static Jogo ParaModel(this InserirJogoRequestApiModel request)
+    {
+        return new Jogo
+        {
+            Nome = request.Nome,
+            Descricao = request.Descricao,
+            AnoLancamento = request.AnoLancamento,
+            Preco = request.Preco,
+            Estoque = request.Estoque,
+            IdPlataforma = request.IdPlataforma,
+            IdCondicaoJogo = request.IdCondicaoJogo
+        };
+    }
+
+    public static Jogo ParaModel(this AlterarJogoRequestApiModel request, int id)
+    {
+        var jogo = ((InserirJogoRequestApiModel)request).ParaModel();
+        jogo.Id = id;
+        jogo.Ativo = request.Ativo == true;
+
+        return jogo;
     }
 }

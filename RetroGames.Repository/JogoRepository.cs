@@ -118,6 +118,8 @@ public sealed class JogoRepository : RepositoryBase, IJogoRepository
     {
         const string sql = """
             UPDATE tb_jogo
+                st_ativo = @ativo,
+                qt_estoque = @estoque,
             SET no_jogo = @nome,
                 ds_jogo = @descricao,
                 nu_ano_lancamento = @anoLancamento,
@@ -132,6 +134,7 @@ public sealed class JogoRepository : RepositoryBase, IJogoRepository
         await using var comando = CriarComando(conexao, sql);
 
         AdicionarDadosDoJogo(comando, jogo);
+        AdicionarParametro(comando, "@ativo", jogo.Ativo);
         AdicionarParametro(comando, "@id", jogo.Id);
 
         await ExecutarGravacaoAsync(comando);
