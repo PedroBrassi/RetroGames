@@ -1,5 +1,7 @@
 using RetroGames.WebApi.Configuration;
 using RetroGames.WebApi.Middlewares;
+using FluentValidation;
+using RetroGames.WebApi.Filters;
 
 DotNetEnv.Env.TraversePath().Load();
 
@@ -14,7 +16,23 @@ if (string.IsNullOrWhiteSpace(connectionString))
 
 builder.Services.AddRepositorios(connectionString);
 builder.Services.AddServicosDeNegocio();
-builder.Services.AddControllers();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+builder.Services
+    .AddControllers(opcoes => opcoes.Filters.Add<FluentValidationFilter>())
+    .ConfigureApiBehaviorOptions(opcoes =>
+    {
+        opcoes.InvalidModelStateResponseFactory = contexto =>
+            FluentValidationFilter.CriarResposta(
+                contexto.ModelState.SelectMany(campo =>
+                    campo.Value!.Errors.Select(erro => (
+                        Campo: campo.Key,
+                        Mensagem: erro.Exception is null &&
+                                  !string.IsNullOrWhiteSpace(erro.ErrorMessage)
+                            ? erro.ErrorMessage
+                            : "Valor inválido."))));
+    });
+    
 builder.Services.AddOpenApi();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
