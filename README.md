@@ -18,12 +18,13 @@ RetroGames é um projeto acadêmico de uma loja web de jogos retrô usados. O es
 | Banco de dados | Sete tabelas MySQL com chaves, restrições e índice de nome de jogo. Os dados de exemplo incluem 6 plataformas, 8 gêneros e 20 jogos. |
 | Consultas SQL | Catálogo ativo, gêneros de um jogo, jogos por gênero, contagem por plataforma e busca paginada. Os scripts também permitem verificar a integridade do banco. |
 | Modelos | Sete classes C#, uma por tabela, com as constantes de condição de jogo e perfil. |
-| Acesso a dados | Base com MySqlConnector, comandos parametrizados e tratamento do erro de duplicidade. Repositórios de plataformas, jogos e vínculos jogo–gênero implementados. |
-| API | Projeto ASP.NET Core com controllers. A rota de exemplo do template está disponível para testar a inicialização. |
+| Acesso a dados | Repositórios de plataformas, jogos, gêneros, condições e vínculos jogo–gênero reunidos no `RepositorySet`. Consultas parametrizadas, paginação no MySQL e tratamento de duplicidade. |
+| Regras de negócio | Services de plataformas, gêneros, condições e jogos. Incluem regras de cadastro, montagem dos detalhes do catálogo e transações para gravar jogos e seus vínculos. |
+| API | ASP.NET Core na porta 5080, configuração pelo `.env`, Swagger em desenvolvimento e consultas de plataformas pelo MySQL. Respostas em envelope e tratamento global de exceções. |
 | Front-end | Projeto React 19 com Vite 8, em JavaScript, com a tela inicial do template. |
 | Testes .NET | Projeto xUnit v3 com o teste de exemplo do template. |
 
-A próxima etapa é implementar os repositórios de gêneros e condições e reuni-los no `RepositorySet`. Depois vêm as regras de negócio, os endpoints do catálogo, a autenticação e as telas integradas. Hoje, a API e o front-end podem ser iniciados separadamente para verificar o ambiente.
+As consultas HTTP de gêneros, condições e jogos, as rotas de gravação, a autenticação e a integração das telas com a API ainda estão em desenvolvimento. O front-end já pode ser iniciado separadamente.
 
 ## Estrutura
 
@@ -32,8 +33,8 @@ A próxima etapa é implementar os repositórios de gêneros e condições e reu
 | [`database/`](database/) | Criação do banco, dados de exemplo, consultas e testes de integridade |
 | [`RetroGames.Model/`](RetroGames.Model/) | Modelos das tabelas e constantes |
 | [`RetroGames.Repository/`](RetroGames.Repository/) | Acesso ao MySQL com ADO.NET e MySqlConnector |
-| [`RetroGames.Services/`](RetroGames.Services/) | Projeto reservado à camada de regras de negócio |
-| [`RetroGames.WebApi.ApiModels/`](RetroGames.WebApi.ApiModels/) | Projeto reservado aos contratos da API |
+| [`RetroGames.Services/`](RetroGames.Services/) | Regras de negócio e composição dos dados do catálogo |
+| [`RetroGames.WebApi.ApiModels/`](RetroGames.WebApi.ApiModels/) | Envelope de resposta, códigos da API e contratos JSON |
 | [`RetroGames.WebApi/`](RetroGames.WebApi/) | Aplicação ASP.NET Core |
 | [`RetroGames.WebApi.UnitTests/`](RetroGames.WebApi.UnitTests/) | Projeto de testes do back-end |
 | [`retrogames.web/`](retrogames.web/) | Aplicação React |
@@ -71,7 +72,7 @@ A conferência deve mostrar sete tabelas e 20 jogos. Se as tabelas já existirem
 
 ### 3. Prepare a configuração de conexão
 
-O `.env.example` descreve a conexão local que será usada quando a API for integrada ao banco. Para preparar a conta padrão do exemplo, entre no console do MySQL.
+A API lê o `.env` na inicialização. O `.env.example` tem o modelo de conexão. Para preparar a conta padrão do exemplo, entre no console do MySQL.
 
 ```bash
 sudo env MYSQL_HISTFILE=/dev/null mysql
@@ -109,7 +110,15 @@ dotnet test RetroGames.sln --no-build
 dotnet run --project RetroGames.WebApi --launch-profile http
 ```
 
-Com a API rodando, abra [http://localhost:5259/weatherforecast](http://localhost:5259/weatherforecast). Esse é o endpoint de exemplo da estrutura inicial. A leitura do `.env` pela API e as rotas do RetroGames ficam para a integração.
+Com a API rodando, abra o [Swagger](http://localhost:5080/swagger) para executar as consultas. O contrato OpenAPI também fica disponível em [`/openapi/v1.json`](http://localhost:5080/openapi/v1.json).
+
+| Requisição disponível | Resultado esperado |
+| --- | --- |
+| `GET /api/Plataforma` | HTTP 200, com as seis plataformas de exemplo em `data` |
+| `GET /api/Plataforma/1` | HTTP 200, com os dados do NES / Famicom |
+| `GET /api/Plataforma/99` | HTTP 404, com `responseCode: 100` e a mensagem de plataforma inexistente |
+
+As respostas de sucesso usam `responseCode: 0`. Falhas inesperadas retornam HTTP 500 com `responseCode: 1` e uma mensagem genérica. Os detalhes da falha ficam no log da API.
 
 ### 5. Execute o front-end
 
